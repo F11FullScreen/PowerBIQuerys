@@ -1,0 +1,53 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""&Kullanici&""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""scf_carikart_listele"" : {""session_id"":""" & session_id & """, 
+""firma_kodu"": "&FirmaKodu&", 
+""donem_kodu"": "&FirmaDonem&",
+""params"": {""selectedcolumns"": [
+    ""_key"", 
+    ""carikartkodu"",
+    ""unvan"",
+    ""carikarttipi"",
+    ""satiselemani"",
+    ""carikayitturu"",
+    ""subeadi"",
+    ""tckimlikno"", 
+    ""orjbakiye"", 
+    ""durum"", 
+    ""vergidairesi"", 
+    ""bakiye"", 
+    ""ulke"",
+    ""orjbakiyerd"", 
+    ""verginumarasi"", 
+    ""il"",  
+    ""_level2"", 
+    ""_level1"", 
+    ""cariyedonusmetarihi"",
+    ""potansiyeleklemetarihi"", 
+    ""caripotansiyelturu"", 
+    ""ba"",
+    ""ozelkod1""
+    ],""irsaliyeleriDahilEt"": ""False""}}}",
+Source2 = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/scf/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Tabloya Dönüştürüldü" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Tabloya Dönüştürüldü", "Column1", {"_level2", "cariyedonusmetarihi", "carikarttipi", "il", "orjbakiye", "orjbakiyerd", "potansiyeleklemetarihi", "durum", "subeadi", "ulke", "verginumarasi", "unvan", "_level1", "ba", "satiselemani", "carikartkodu", "tckimlikno", "carikayitturu", "vergidairesi", "bakiye", "_key", "ozelkod1", "caripotansiyelturu"}, {"_level2", "cariyedonusmetarihi", "carikarttipi", "il", "orjbakiye", "orjbakiyerd", "potansiyeleklemetarihi", "durum", "subeadi", "ulke", "verginumarasi", "unvan", "_level1", "ba", "satiselemani", "carikartkodu", "tckimlikno", "carikayitturu", "vergidairesi", "bakiye", "_key", "ozelkod1", "caripotansiyelturu"}),
+    #"Yeniden Sıralanan Sütunlar" = Table.ReorderColumns(#"Genişletilen Column1",{"_key", "carikartkodu", "unvan", "orjbakiye", "_level2", "cariyedonusmetarihi", "carikarttipi", "il", "orjbakiyerd", "durum", "subeadi", "ulke", "verginumarasi", "_level1", "ba", "satiselemani", "tckimlikno", "carikayitturu", "vergidairesi", "bakiye", "caripotansiyelturu"}),
+    #"Değiştirilen Değer" = Table.ReplaceValue(#"Yeniden Sıralanan Sütunlar",".",",",Replacer.ReplaceText,{"bakiye"}),
+    #"Değiştirilen Tür" = Table.TransformColumnTypes(#"Değiştirilen Değer",{{"bakiye", Currency.Type}}),
+    #"Filtrelenen Satırlar" = Table.SelectRows(#"Değiştirilen Tür", each ([durum] = "A")),
+    #"Özel Eklendi" = Table.AddColumn(#"Filtrelenen Satırlar", "CariGrup", each if Text.End([ozelkod1],5)="(003)" then "Borçlu Cari Listesi" else if Text.Start([carikartkodu],3)="320" then "Alacaklı Cari Listesi" else "Diğer Cariler")
+in
+    #"Özel Eklendi"
