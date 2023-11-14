@@ -1,0 +1,23 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""&Kullanici&""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""prj_proje_listele"" : {""session_id"":""" & session_id & """, 
+""firma_kodu"": "&FirmaKodu&", 
+""donem_kodu"": "&FirmaDonem&"}}",
+Source2 = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/prj/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Tabloya Dönüştürüldü" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Tabloya Dönüştürüldü", "Column1", {"_user", "_key_sis_ozelkod4", "_key_sis_ozelkod5", "_key_sis_ozelkod2", "_key_sis_ozelkod3", "_key_sis_ozelkod1", "_key_sis_seviyekodu", "tarih_baslangic", "leaf", "durum", "kullaniciadi", "aciklama", "_level2", "_level1", "ekleyenkullaniciadi", "_date", "ozelkod5", "_key", "ozelkod2", "_cdate", "tarih_bitis", "__format", "_owner", "ozelkod4", "kodu", "_serial", "ozelkod3", "ozelkod1"}, {"_user", "_key_sis_ozelkod4", "_key_sis_ozelkod5", "_key_sis_ozelkod2", "_key_sis_ozelkod3", "_key_sis_ozelkod1", "_key_sis_seviyekodu", "tarih_baslangic", "leaf", "durum", "kullaniciadi", "aciklama", "_level2", "_level1", "ekleyenkullaniciadi", "_date", "ozelkod5", "_key", "ozelkod2", "_cdate", "tarih_bitis", "__format", "_owner", "ozelkod4", "kodu", "_serial", "ozelkod3", "ozelkod1"})
+in
+    #"Genişletilen Column1"
