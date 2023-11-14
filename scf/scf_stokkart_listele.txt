@@ -1,0 +1,52 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""&Kullanici&""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+PostContents2 = "{""scf_stokkart_listele"" : {
+    ""session_id"":""" & session_id & """, 
+    ""firma_kodu"": "&FirmaKodu&", 
+    ""donem_kodu"": "&FirmaDonem&",
+    ""params"": {""selectedcolumns"": [
+        ""_level1"",
+        ""_level2"",
+        ""aciklama"",
+        ""birimadi"",
+        ""durum"",
+        ""fiili_stok"",
+        ""fiyat1"",
+        ""fiyat2"",
+        ""fiyat3"",
+        ""fiyat4"",
+        ""fiyat5"",
+        ""marka"",
+        ""markaack"",
+        ""ozelkod1"",
+        ""ozelkod1kodu"",
+        ""ozelkod2"",
+        ""ozelkod2kodu"",
+        ""ozelkod3"",
+        ""ozelkod3kodu"",
+        ""stokkartkodu"",
+        ""stokkartturu""
+    ]},
+    ""filters"":[{""field"": ""durum"", ""operator"": ""="", ""value"": ""A""}],
+    ""limit"":0,
+    ""offset"":0
+    }}",
+Source2 = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/scf/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Tabloya Dönüştürüldü" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Tabloya Dönüştürüldü", "Column1", {"markaack", "fiyat3", "fiyat2", "fiyat1", "fiyat5", "fiyat4", "ozelkod2kodu", "marka", "durum", "ozelkod1kodu", "stokkartkodu", "aciklama", "_level2", "_level1", "fiili_stok", "ozelkod3kodu", "stokkartturu", "birimadi", "ozelkod2", "ozelkod3", "ozelkod1"}, {"markaack", "fiyat3", "fiyat2", "fiyat1", "fiyat5", "fiyat4", "ozelkod2kodu", "marka", "durum", "ozelkod1kodu", "stokkartkodu", "aciklama", "_level2", "_level1", "fiili_stok", "ozelkod3kodu", "stokkartturu", "birimadi", "ozelkod2", "ozelkod3", "ozelkod1"}),
+    #"Değiştirilen Değer" = Table.ReplaceValue(#"Genişletilen Column1",".",",",Replacer.ReplaceText,{"_level2", "_level1", "fiili_stok"}),
+    #"Değiştirilen Tür" = Table.TransformColumnTypes(#"Değiştirilen Değer",{{"fiili_stok", type number}})
+in
+    #"Değiştirilen Tür"

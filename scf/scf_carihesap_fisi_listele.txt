@@ -1,0 +1,53 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""&Kullanici&""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""scf_carihesap_fisi_listele"" : {""session_id"":""" & session_id & """, 
+""firma_kodu"": "&FirmaKodu&", 
+""donem_kodu"": "&FirmaDonem&",
+""params"": {""selectedcolumns"": [
+""_key"",
+""_key_muh_masrafmerkezi"",
+""_key_prj_proje"",
+""_key_sis_devir"",
+""_key_sis_sube"",
+""_level1"",
+""_level2"",
+""aciklama"",
+""aciklama1"",
+""aciklama2"",
+""aciklama3"",
+""alacak"",
+""belgeturu"",
+""belgeturuack"",
+""bilgi"",
+""borc"",
+""fisno"",
+""masrafmerkeziaciklama"",
+""masrafmerkezikodu"",
+""muhasebelesme"",
+""ozelkod"",
+""projekodu"",
+""sube"",
+""tarih"",
+""turu"",
+""turuack""
+    ]}}}",
+Source2 = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/scf/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Tabloya Dönüştürüldü" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Tabloya Dönüştürüldü", "Column1", {"_level2", "muhasebelesme", "_key_sis_devir", "turuack", "sube", "borc", "tarih", "masrafmerkeziaciklama", "alacak", "_key_muh_masrafmerkezi", "belgeturuack", "aciklama", "bilgi", "_level1", "ozelkod", "_key_sis_sube", "projekodu", "aciklama1", "aciklama2", "aciklama3", "masrafmerkezikodu", "_key", "turu", "_key_prj_proje", "belgeturu", "fisno"}, {"_level2", "muhasebelesme", "_key_sis_devir", "turuack", "sube", "borc", "tarih", "masrafmerkeziaciklama", "alacak", "_key_muh_masrafmerkezi", "belgeturuack", "aciklama", "bilgi", "_level1", "ozelkod", "_key_sis_sube", "projekodu", "aciklama1", "aciklama2", "aciklama3", "masrafmerkezikodu", "_key", "turu", "_key_prj_proje", "belgeturu", "fisno"}),
+    #"Değiştirilen Değer" = Table.ReplaceValue(#"Genişletilen Column1",".",",",Replacer.ReplaceText,{"borc", "alacak"}),
+    #"Değiştirilen Tür" = Table.TransformColumnTypes(#"Değiştirilen Değer",{{"borc", Currency.Type}, {"tarih", type datetime}})
+in
+    #"Değiştirilen Tür"
