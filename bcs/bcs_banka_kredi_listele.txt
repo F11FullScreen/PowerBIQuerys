@@ -1,0 +1,27 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":""" & Kullanici & """,""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"& Firma &".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""bcs_banka_kredi_listele"" : {""session_id"":""" & session_id & """,""firma_kodu"": "&FirmaKodu&", ""donem_kodu"": "&FirmaDonem&"}}",
+Source2 = Web.Contents("https://"& Firma &".ws.dia.com.tr/api/v3/bcs/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Converted to Table" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Expanded Column1" = Table.ExpandRecordColumn(#"Converted to Table", "Column1", {"kredi_tutari", "sozlesmeno", "toplam_odenecek", "durum_ack", "banka_hesabi", "_key_scf_hizmetkart_masraf", "_cdate", "banka_fisno_masraf", "unvan_masraf", "masraf_tutari", "bsmvyuzde", "bsmvtutari", "_key_sis_doviz", "_key_yapilandirma", "vade", "kkdftutari", "_key_bcs_banka_fisi", "toplam_odenen", "durum", "devir_ack", "toplam_odenen_kredi_taksit", "proje", "_key_sis_ozelkod", "subeadi", "ozelkod_ack", "faizyuzde", "devir", "aciklama", "_level2", "_key_scf_hizmetkart_kkdf", "_level1", "dovizkuru", "banka_fisno", "_key_scf_hizmetkart_faiz", "banka_hesabi_virman", "_key_prj_proje_kredi", "_key_sis_sube", "_key_sis_yetkikodu", "_key_scf_hizmetkart_bsmv", "_key_bcs_banka_fisi_yapilandir", "dovizadi", "_key_bcs_bankahesabi_ticari", "faiztutari", "toplam_devreden", "_key_bcs_banka_fisi_masraf", "kodu", "kkdfyuzde", "bitis_tarihi", "kredi_tutari_anadoviz", "_key_prj_proje", "ekleyenkullaniciadi", "kredi_kullanimtarihi", "_key", "_owner", "baslangic_tarihi", "_key_bcs_bankahesabi_kredi", "_date", "toplam_kalan", "_user", "_serial", "hizmetkartkodu_masraf"}, {"kredi_tutari", "sozlesmeno", "toplam_odenecek", "durum_ack", "banka_hesabi", "_key_scf_hizmetkart_masraf", "_cdate", "banka_fisno_masraf", "unvan_masraf", "masraf_tutari", "bsmvyuzde", "bsmvtutari", "_key_sis_doviz", "_key_yapilandirma", "vade", "kkdftutari", "_key_bcs_banka_fisi", "toplam_odenen", "durum", "devir_ack", "toplam_odenen_kredi_taksit", "proje", "_key_sis_ozelkod", "subeadi", "ozelkod_ack", "faizyuzde", "devir", "aciklama", "_level2", "_key_scf_hizmetkart_kkdf", "_level1", "dovizkuru", "banka_fisno", "_key_scf_hizmetkart_faiz", "banka_hesabi_virman", "_key_prj_proje_kredi", "_key_sis_sube", "_key_sis_yetkikodu", "_key_scf_hizmetkart_bsmv", "_key_bcs_banka_fisi_yapilandir", "dovizadi", "_key_bcs_bankahesabi_ticari", "faiztutari", "toplam_devreden", "_key_bcs_banka_fisi_masraf", "kodu", "kkdfyuzde", "bitis_tarihi", "kredi_tutari_anadoviz", "_key_prj_proje", "ekleyenkullaniciadi", "kredi_kullanimtarihi", "_key", "_owner", "baslangic_tarihi", "_key_bcs_bankahesabi_kredi", "_date", "toplam_kalan", "_user", "_serial", "hizmetkartkodu_masraf"}),
+    #"Replaced Value" = Table.ReplaceValue(#"Expanded Column1",".",",",Replacer.ReplaceText,{"kredi_tutari", "sozlesmeno", "toplam_odenecek", "durum_ack", "banka_hesabi", "_key_scf_hizmetkart_masraf", "_cdate", "banka_fisno_masraf", "unvan_masraf", "masraf_tutari", "bsmvyuzde", "bsmvtutari", "_key_sis_doviz", "_key_yapilandirma", "vade", "kkdftutari", "_key_bcs_banka_fisi", "toplam_odenen", "durum", "devir_ack", "toplam_odenen_kredi_taksit", "proje", "_key_sis_ozelkod", "subeadi", "ozelkod_ack", "faizyuzde", "devir", "aciklama", "_level2", "_key_scf_hizmetkart_kkdf", "_level1", "dovizkuru", "banka_fisno", "_key_scf_hizmetkart_faiz", "banka_hesabi_virman", "_key_prj_proje_kredi", "_key_sis_sube", "_key_sis_yetkikodu", "_key_scf_hizmetkart_bsmv", "_key_bcs_banka_fisi_yapilandir", "dovizadi", "_key_bcs_bankahesabi_ticari", "faiztutari", "toplam_devreden", "_key_bcs_banka_fisi_masraf", "kodu", "kkdfyuzde", "bitis_tarihi", "kredi_tutari_anadoviz", "_key_prj_proje", "ekleyenkullaniciadi", "kredi_kullanimtarihi", "_key", "_owner", "baslangic_tarihi", "_key_bcs_bankahesabi_kredi", "_date", "toplam_kalan", "_user", "_serial", "hizmetkartkodu_masraf"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Replaced Value",{{"toplam_odenecek", Currency.Type}, {"kredi_tutari", Currency.Type}}),
+    #"Removed Columns" = Table.RemoveColumns(#"Changed Type",{"_key_scf_hizmetkart_masraf", "_cdate", "banka_fisno_masraf", "unvan_masraf"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Removed Columns",{{"bsmvtutari", Currency.Type}, {"kkdftutari", Currency.Type}, {"toplam_odenen", Currency.Type}, {"toplam_odenen_kredi_taksit", Currency.Type}}),
+    #"Removed Columns1" = Table.RemoveColumns(#"Changed Type1",{"proje"}),
+    #"Changed Type2" = Table.TransformColumnTypes(#"Removed Columns1",{{"faiztutari", Currency.Type}, {"toplam_kalan", Currency.Type}})
+in
+    #"Changed Type2"
