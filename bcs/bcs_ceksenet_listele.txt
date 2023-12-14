@@ -1,0 +1,51 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""&Kullanici&""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""bcs_ceksenet_listele"" : {""session_id"":""" & session_id & """, 
+""firma_kodu"": "&FirmaKodu&", 
+""donem_kodu"": "&FirmaDonem&",
+""params"": {""selectedcolumns"": [
+""_key"",
+""aciklama"",
+""bankaadi"",
+""bankaadi_ceksenet"",
+""cari"",
+""carikartkodu"",
+""carikartunvan"",
+""cirolu"",
+""doviz"",
+""doviztutar"",
+""durumu"",
+""kalantutar"",
+""turu"",
+""turu_txt"",
+""tutar"",
+""tutar_cari"",
+""vade"",
+""vadedonemi"",
+""vadedonemihafta"",
+""valor""
+    ],""irsaliyeleriDahilEt"": ""False"",
+    ""_key"": ""0"", 
+	""teslimolmamissiparisler"": ""False""}}}",
+Source2 = Web.Contents("https://"&Firma&".ws.dia.com.tr/api/v3/bcs/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Tabloya Dönüştürüldü" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Tabloya Dönüştürüldü", "Column1", {"bankaadi", "doviz", "bankaadi_ceksenet", "tutar", "durumu", "cirolu", "tutar_cari", "valor", "aciklama", "vadedonemi", "vadedonemihafta", "carikartunvan", "cari", "carikartkodu", "kalantutar", "vade", "_key", "turu", "turu_txt", "doviztutar"}, {"bankaadi", "doviz", "bankaadi_ceksenet", "tutar", "durumu", "cirolu", "tutar_cari", "valor", "aciklama", "vadedonemi", "vadedonemihafta", "carikartunvan", "cari", "carikartkodu", "kalantutar", "vade", "_key", "turu", "turu_txt", "doviztutar"}),
+    #"Değiştirilen Değer" = Table.ReplaceValue(#"Genişletilen Column1",".",",",Replacer.ReplaceText,{"tutar"}),
+    #"Değiştirilen Tür" = Table.TransformColumnTypes(#"Değiştirilen Değer",{{"tutar", Currency.Type}, {"valor", type datetime}, {"vade", type datetime}}),
+    #"Değiştirilen Değer1" = Table.ReplaceValue(#"Değiştirilen Tür",".",",",Replacer.ReplaceText,{"doviztutar"}),
+    #"Değiştirilen Tür1" = Table.TransformColumnTypes(#"Değiştirilen Değer1",{{"doviztutar", Currency.Type}})
+in
+    #"Değiştirilen Tür1"
