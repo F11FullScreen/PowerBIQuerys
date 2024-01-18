@@ -1,0 +1,24 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":""" & Kullanici & """,""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"& Firma &".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""bcs_banka_kredi_taksit_listele"" : {""session_id"":""" & session_id & """,""firma_kodu"": "&FirmaKodu&", ""donem_kodu"": "&FirmaDonem&"}}",
+Source2 = Web.Contents("https://"& Firma &".ws.dia.com.tr/api/v3/bcs/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    #"Converted to Table" = Table.FromList(result, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Converted to Table", "Column1", {"hesapadi_kredi", "odeme_durumu_txt", "hizmetkartkodu_bsmv", "hesapadi_ticari", "tutar", "dovizkuru", "_key_sis_doviz", "_key_yapilandirma", "kalan_toplam", "vade_tarihi", "bsmv_tutari", "kkdf_tutari_kalan", "hesapkodu_ticari", "kodu", "ana_para", "unvan_kkdf", "odenen_toplam", "devir", "aciklama", "_level2", "_key_scf_hizmetkart_kkdf", "_level1", "hizmetkartkodu_kkdf", "ozelkod", "bankafisino", "_key_scf_hizmetkart_faiz", "bsmv_tutari_kalan", "vadedonemi", "hesapkodu_kredi", "ekleyenkullaniciadi", "dovizadi", "faiz_tutari_kalan", "bsmv_tutari_odenen", "unvan_bsmv", "_date", "taksit_no", "_user", "kkdf_tutari_odenen", "unvan_faiz", "ana_para_odenen", "odeme_durumu", "_cdate", "_key_scf_hizmetkart_bsmv", "ana_para_kalan", "_key_sis_ozelkod", "_key", "_owner", "kkdf_tutari", "hizmetkartkodu_faiz", "_key_bcs_bankahesabi_kredi", "_key_bcs_bankahesabi_ticari", "faiz_tutari_odenen", "_key_bcs_banka_kredi", "_serial", "faiz_tutari"}, {"hesapadi_kredi", "odeme_durumu_txt", "hizmetkartkodu_bsmv", "hesapadi_ticari", "tutar", "dovizkuru", "_key_sis_doviz", "_key_yapilandirma", "kalan_toplam", "vade_tarihi", "bsmv_tutari", "kkdf_tutari_kalan", "hesapkodu_ticari", "kodu", "ana_para", "unvan_kkdf", "odenen_toplam", "devir", "aciklama", "_level2", "_key_scf_hizmetkart_kkdf", "_level1", "hizmetkartkodu_kkdf", "ozelkod", "bankafisino", "_key_scf_hizmetkart_faiz", "bsmv_tutari_kalan", "vadedonemi", "hesapkodu_kredi", "ekleyenkullaniciadi", "dovizadi", "faiz_tutari_kalan", "bsmv_tutari_odenen", "unvan_bsmv", "_date", "taksit_no", "_user", "kkdf_tutari_odenen", "unvan_faiz", "ana_para_odenen", "odeme_durumu", "_cdate", "_key_scf_hizmetkart_bsmv", "ana_para_kalan", "_key_sis_ozelkod", "_key", "_owner", "kkdf_tutari", "hizmetkartkodu_faiz", "_key_bcs_bankahesabi_kredi", "_key_bcs_bankahesabi_ticari", "faiz_tutari_odenen", "_key_bcs_banka_kredi", "_serial", "faiz_tutari"}),
+    #"Değiştirilen Değer" = Table.ReplaceValue(#"Genişletilen Column1",".",",",Replacer.ReplaceText,{"tutar", "kalan_toplam", "bsmv_tutari", "kkdf_tutari_kalan", "ana_para", "odenen_toplam", "bsmv_tutari_kalan", "faiz_tutari_kalan", "bsmv_tutari_odenen", "ana_para_odenen", "ana_para_kalan", "faiz_tutari_odenen", "faiz_tutari"}),
+    #"Değiştirilen Tür" = Table.TransformColumnTypes(#"Değiştirilen Değer",{{"tutar", type number}, {"kalan_toplam", type number}, {"bsmv_tutari", type number}, {"kkdf_tutari_kalan", type number}, {"ana_para", type number}, {"odenen_toplam", type number}, {"bsmv_tutari_kalan", type number}, {"faiz_tutari_kalan", type number}, {"bsmv_tutari_odenen", type number}, {"ana_para_odenen", type number}, {"ana_para_kalan", type number}, {"faiz_tutari_odenen", type number}, {"faiz_tutari", type number}, {"vade_tarihi", type datetime}}),
+    #"Kaldırılan Sütunlar" = Table.RemoveColumns(#"Değiştirilen Tür",{"_key_sis_doviz", "_key_yapilandirma", "_key_scf_hizmetkart_kkdf", "_key_scf_hizmetkart_faiz", "_date", "_user", "_cdate", "_key_scf_hizmetkart_bsmv", "_key_sis_ozelkod", "_key_bcs_bankahesabi_kredi", "_key_bcs_bankahesabi_ticari", "_serial"})
+in
+    #"Kaldırılan Sütunlar"

@@ -1,0 +1,25 @@
+let
+    Kaynak = let
+PostContents = "{""login"":{""username"":"""& Kullanici &""",""password"": """&Parola&""",""disconnect_same_user"": ""True"",""lang"": ""tr"",""params"":{""apikey"":"""&Api&"""}}}",
+Source = Web.Contents("https://"& Firma &".ws.dia.com.tr/api/v3/sis/json",[Content=Text.ToBinary(PostContents)]),
+api_key = Text.FromBinary(Source),
+msg_index = Text.PositionOf(api_key,"msg"),
+msg_text = Text.Range(api_key,msg_index),
+msg_text2 = Text.Range(msg_text,7),
+msg_index2= Text.PositionOf(msg_text2,",""c"),
+session_id = Text.Range(api_key,9,32),
+
+PostContents2 = "{""rpr_raporsonuc_getir"" : {""session_id"":""" & session_id & """, ""firma_kodu"": "&FirmaKodu&", ""donem_kodu"": "&FirmaDonem&",""report_code"":""PBI_DemoRapor"",
+     ""format_type"": ""json"" }}",
+Source2 = Web.Contents("https://" & Firma & ".ws.dia.com.tr/api/v3/rpr/json",[Content=Text.ToBinary(PostContents2)])
+in 
+Source2,
+    ImportedJSON = Json.Document(Kaynak,1254),
+    result = ImportedJSON[result],
+    result2 =Binary.FromText(result, BinaryEncoding.Base64),
+    #"Imported JSON" = Json.Document(result2,1254),
+    __rows = #"Imported JSON"[__rows],
+    #"Converted to Table" = Table.FromList(__rows, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+    #"Genişletilen Column1" = Table.ExpandRecordColumn(#"Converted to Table", "Column1", {"marka", "kar", "firma", "maliyet", "stokad", "tip", "birimfiyat", "stokkod", "sube", "miktar", "tutar", "tarih"}, {"marka", "kar", "firma", "maliyet", "stokad", "tip", "birimfiyat", "stokkod", "sube", "miktar", "tutar", "tarih"})
+in
+    #"Genişletilen Column1"
